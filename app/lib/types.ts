@@ -111,18 +111,23 @@ export interface ContributionSuggestion {
 
 export interface ActivityItem {
   id: string;
-  type: 'pr-review' | 'issue-created' | 'fix-applied' | 'contribution' | 'repo-connected';
+  type: 'pr-review' | 'issue-created' | 'fix-applied' | 'contribution' | 'repo-connected' | 'ai-chat' | 'code-gen' | 'commit-gen';
   title: string;
   description: string;
   timestamp: string;
   repo?: string;
   status: 'success' | 'pending' | 'failed';
   url?: string;
+  provider?: 'gemini' | 'openai' | 'copilot';
 }
 
 export interface AppSettings {
   githubToken: string;
   geminiApiKey: string;
+  openaiApiKey: string;
+  copilotApiKey: string;
+  activeProvider: 'gemini' | 'openai' | 'copilot';
+  selectedModel: string;
   autoReview: boolean;
   autoFix: boolean;
   scanSchedule: 'manual' | 'daily' | 'weekly';
@@ -133,4 +138,50 @@ export interface DashboardStats {
   prsReviewed: number;
   issuesFixed: number;
   contributions: number;
+  aiChats: number;
+  codeGenerated: number;
+}
+
+export interface CommitMessage {
+  type: string;
+  scope?: string;
+  subject: string;
+  body?: string;
+  breaking: boolean;
+  fullMessage: string;
+}
+
+export interface GeneratedCode {
+  code: string;
+  language: string;
+  explanation: string;
+  dependencies: string[];
+  filename: string;
+}
+
+export interface ChatMessage {
+  id: string;
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+  timestamp: string;
+  provider?: 'gemini' | 'openai' | 'copilot';
+  model?: string;
+}
+
+export interface WorkflowStep {
+  id: string;
+  name: string;
+  type: 'ai-review' | 'ai-scan' | 'create-issue' | 'create-pr' | 'notify' | 'custom';
+  config: Record<string, unknown>;
+  status: 'pending' | 'running' | 'done' | 'failed';
+}
+
+export interface Workflow {
+  id: string;
+  name: string;
+  description: string;
+  trigger: 'manual' | 'on-push' | 'on-pr' | 'scheduled';
+  steps: WorkflowStep[];
+  enabled: boolean;
+  lastRun?: string;
 }

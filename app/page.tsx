@@ -11,11 +11,15 @@ export default function Home() {
         <p className="text-text-muted">Monitor and control your GitHub automation agent.</p>
       </header>
 
-      <AgentStatus state="idle" />
+      <div className="animate-fade-in delay-100">
+        <AgentStatus state="idle" />
+      </div>
 
-      <QuickActions />
+      <div className="animate-fade-in delay-200 mt-6">
+        <QuickActions />
+      </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-fade-in delay-300 mt-6">
         <div className="h-[450px]">
           <ActivityFeed />
         </div>
