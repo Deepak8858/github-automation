@@ -33,6 +33,8 @@ export default function AutoAgentPage() {
     });
 
     const [repoInput, setRepoInput] = useState('');
+    const [repos, setRepos] = useState<any[]>([]);
+    const [isLoadingRepos, setIsLoadingRepos] = useState(false);
     const [isRunning, setIsRunning] = useState(false);
     const [logs, setLogs] = useState<LogEntry[]>([]);
 
@@ -44,14 +46,35 @@ export default function AutoAgentPage() {
 
     useEffect(() => {
         setMounted(true);
-        const savedSettings = localStorage.getItem('gitagent_settings');
-        if (savedSettings) {
-            try {
-                setSettings(JSON.parse(savedSettings));
-            } catch (e) {
-                console.error('Failed to parse settings', e);
+        const fetchSettingsAndRepos = async () => {
+            const savedSettings = localStorage.getItem('gitagent_settings');
+            let currentSettings = settings;
+            if (savedSettings) {
+                try {
+                    currentSettings = JSON.parse(savedSettings);
+                    setSettings(currentSettings);
+                } catch (e) {
+                    console.error('Failed to parse settings', e);
+                }
             }
-        }
+
+            // Try to fetch repos if we have a token or might have a server token
+            setIsLoadingRepos(true);
+            try {
+                const res = await fetch('/api/github/repos', {
+                    headers: currentSettings.githubToken ? { 'x-github-token': currentSettings.githubToken } : {}
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    setRepos(data);
+                }
+            } catch (err) {
+                console.error("Failed to fetch repos", err);
+            } finally {
+                setIsLoadingRepos(false);
+            }
+        };
+        fetchSettingsAndRepos();
     }, []);
 
     const addLog = (type: LogEntry['type'], message: string, options?: { details?: string; link?: string; linkText?: string }) => {
@@ -208,12 +231,18 @@ export default function AutoAgentPage() {
                         <input
                             title="Repository"
                             type="text"
-                            placeholder="owner/repo (e.g., facebook/react)"
+                            list="repo-list"
+                            placeholder={isLoadingRepos ? "Loading repositories..." : "Select or type owner/repo (e.g., facebook/react)"}
                             value={repoInput}
                             onChange={(e) => setRepoInput(e.target.value)}
                             disabled={isRunning}
                             style={{ width: '100%', height: '48px', background: 'var(--bg-tertiary)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '0 16px 0 44px', color: 'var(--text-primary)', outline: 'none', transition: 'all 0.2s', fontSize: '15px' }}
                         />
+                        <datalist id="repo-list">
+                            {repos.map((repo) => (
+                                <option key={repo.id} value={repo.full_name} />
+                            ))}
+                        </datalist>
                     </div>
                     <button
                         onClick={runAgent}
