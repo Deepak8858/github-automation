@@ -17,6 +17,10 @@ import {
     ExternalLink,
     Filter,
     TrendingUp,
+    Loader2,
+    Rocket,
+    CheckCircle2,
+    GitPullRequest,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useSettings, useStats, useActivity } from '../lib/store';
@@ -33,6 +37,8 @@ export default function ContributionsPage() {
     const [selectedLang, setSelectedLang] = useState('All');
     const [loadingTrending, setLoadingTrending] = useState(false);
     const [analyzingRepo, setAnalyzingRepo] = useState<string | null>(null);
+    const [contributingId, setContributingId] = useState<string | null>(null);
+    const [contributionResults, setContributionResults] = useState<Record<string, { prUrl?: string; error?: string }>>({});
     const [mounted, setMounted] = useState(false);
 
     useEffect(() => setMounted(true), []);
@@ -76,6 +82,7 @@ export default function ContributionsPage() {
         }
         setAnalyzingRepo(repo.full_name);
         setSuggestions([]);
+        setContributionResults({});
 
         try {
             const res = await fetch('/api/ai/suggest', {
@@ -104,6 +111,63 @@ export default function ContributionsPage() {
             toast.error('Analysis failed');
         }
         setAnalyzingRepo(null);
+    };
+
+    const autoContribute = async (suggestion: ContributionSuggestion) => {
+        const aiConfig = getActiveAIKey();
+        if (!aiConfig) {
+            toast.error('Please set an AI API key in Settings');
+            return;
+        }
+
+        const suggestionKey = suggestion.id || suggestion.title;
+        setContributingId(suggestionKey);
+
+        try {
+            const [owner, repo] = suggestion.repo.full_name.split('/');
+            const res = await fetch('/api/ai/auto-contribute', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'auto_contribute',
+                    githubToken: settings.githubToken,
+                    provider: aiConfig.provider,
+                    apiKey: aiConfig.key,
+                    owner,
+                    repo,
+                    suggestion: {
+                        type: suggestion.type,
+                        title: suggestion.title,
+                        description: suggestion.description,
+                        difficulty: suggestion.difficulty,
+                        files: suggestion.files,
+                    },
+                }),
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                setContributionResults(prev => ({ ...prev, [suggestionKey]: { prUrl: data.prUrl } }));
+                incrementStat('contributions');
+                addActivity({
+                    type: 'contribution',
+                    title: `Auto-Contributed: ${suggestion.title}`,
+                    description: `Opened PR #${data.prNumber} on ${suggestion.repo.full_name}`,
+                    repo: suggestion.repo.full_name,
+                    status: 'success',
+                    url: data.prUrl,
+                });
+                toast.success(`🚀 PR #${data.prNumber} opened! Contribution submitted.`);
+            } else {
+                const err = await res.json();
+                setContributionResults(prev => ({ ...prev, [suggestionKey]: { error: err.error } }));
+                toast.error(err.error || 'Auto-contribute failed');
+            }
+        } catch (err: any) {
+            setContributionResults(prev => ({ ...prev, [suggestionKey]: { error: err.message } }));
+            toast.error('Auto-contribute failed');
+        }
+        setContributingId(null);
     };
 
     const getTypeConfig = (type: string) => {
@@ -233,12 +297,15 @@ export default function ContributionsPage() {
                 <div className="animate-fade-in">
                     <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <Sparkles size={18} style={{ color: 'var(--accent-secondary)' }} />
-                        Contribution Ideas
+                        Contribution Ideas — Click &quot;Auto-Contribute&quot; to submit autonomously
                     </h3>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                         {suggestions.map((s, i) => {
                             const config = getTypeConfig(s.type);
                             const Icon = config.icon;
+                            const key = s.id || s.title;
+                            const result = contributionResults[key];
+                            const isContributing = contributingId === key;
                             return (
                                 <div
                                     key={s.id || i}
@@ -259,7 +326,7 @@ export default function ContributionsPage() {
                                                 {s.type}
                                             </span>
                                         </div>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                             <span style={{ fontSize: '12px', color: getDifficultyColor(s.difficulty), fontWeight: 600 }}>
                                                 {s.difficulty}
                                             </span>
@@ -268,11 +335,11 @@ export default function ContributionsPage() {
                                             </span>
                                         </div>
                                     </div>
-                                    <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: '1.6', marginBottom: '8px' }}>
+                                    <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: '1.6', marginBottom: '12px' }}>
                                         {s.description}
                                     </p>
                                     {s.files && s.files.length > 0 && (
-                                        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                                        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '12px' }}>
                                             {s.files.map((f, fi) => (
                                                 <span key={fi} style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: 'var(--text-muted)', background: 'var(--bg-tertiary)', padding: '3px 8px', borderRadius: '6px' }}>
                                                     <Code2 size={10} /> {f}
@@ -280,6 +347,38 @@ export default function ContributionsPage() {
                                             ))}
                                         </div>
                                     )}
+
+                                    {/* Auto-Contribute Button */}
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                        {result?.prUrl ? (
+                                            <a
+                                                href={result.prUrl}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="btn-gradient"
+                                                style={{ fontSize: '12px', padding: '8px 16px', textDecoration: 'none' }}
+                                            >
+                                                <CheckCircle2 size={14} /> PR Submitted — View on GitHub
+                                            </a>
+                                        ) : result?.error ? (
+                                            <div style={{ fontSize: '12px', color: 'var(--error)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                ⚠️ {result.error}
+                                            </div>
+                                        ) : (
+                                            <button
+                                                className="btn-gradient"
+                                                style={{ fontSize: '12px', padding: '8px 20px' }}
+                                                onClick={() => autoContribute(s)}
+                                                disabled={isContributing || !!contributingId}
+                                            >
+                                                {isContributing ? (
+                                                    <><Loader2 size={14} className="animate-spin" /> Contributing autonomously...</>
+                                                ) : (
+                                                    <><Rocket size={14} /> Auto-Contribute</>
+                                                )}
+                                            </button>
+                                        )}
+                                    </div>
                                 </div>
                             );
                         })}
@@ -293,7 +392,7 @@ export default function ContributionsPage() {
                     <Heart size={48} style={{ opacity: 0.3 }} />
                     <p style={{ fontWeight: 600, fontSize: '16px', marginTop: '12px' }}>Discover Open Source</p>
                     <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '16px' }}>
-                        Search for trending repos and let AI suggest ways to contribute
+                        Search for trending repos, get AI ideas, and auto-contribute with one click
                     </p>
                     <button className="btn-gradient" onClick={fetchTrending}>
                         <Globe size={16} /> Browse Trending

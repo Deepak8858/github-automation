@@ -297,3 +297,4 @@ export async function fetchUserBadgeStats(token: string) {
         createdAt: user.created_at,
     };
 }
+

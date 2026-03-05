@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Award, Loader2, Send, Trophy, Lock, Sparkles, RefreshCw, ChevronDown, Bot } from 'lucide-react';
+import { Award, Loader2, Send, Trophy, Lock, Sparkles, RefreshCw, ChevronDown, Bot, Rocket, CheckCircle2, Zap } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
 interface Settings {
@@ -50,6 +50,8 @@ export default function BadgesPage() {
     const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
     const [chatInput, setChatInput] = useState('');
     const [chatLoading, setChatLoading] = useState(false);
+    const [earningBadge, setEarningBadge] = useState<string | null>(null);
+    const [earnedResults, setEarnedResults] = useState<Record<string, string[]>>({});
     const chatEndRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -132,6 +134,43 @@ export default function BadgesPage() {
         }
     };
 
+    const autoEarnBadge = async (badge: Badge) => {
+        if (badge.earned) return;
+
+        const activeKey = settings.activeProvider === 'openai' ? settings.openaiApiKey :
+            settings.activeProvider === 'copilot' ? settings.copilotApiKey : settings.geminiApiKey;
+
+        setEarningBadge(badge.id);
+
+        try {
+            const res = await fetch('/api/ai/auto-badge', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    githubToken: settings.githubToken,
+                    action: 'auto_earn',
+                    badgeId: badge.id,
+                    provider: settings.activeProvider,
+                    apiKey: activeKey,
+                }),
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                setEarnedResults(prev => ({ ...prev, [badge.id]: data.results }));
+                toast.success(`🚀 Autonomous action completed for "${badge.name}"!`);
+                // Refresh badges after a delay
+                setTimeout(() => fetchBadges(), 3000);
+            } else {
+                const err = await res.json();
+                toast.error(err.error || 'Auto-earn failed');
+            }
+        } catch (err: any) {
+            toast.error(err.message || 'Auto-earn failed');
+        }
+        setEarningBadge(null);
+    };
+
     const badges: Badge[] = badgeData?.badges || [];
     const categories = ['All', ...Array.from(new Set(badges.map(b => b.category)))];
     const filteredBadges = badges
@@ -153,7 +192,7 @@ export default function BadgesPage() {
                     <div style={{ flex: 1 }}>
                         <h1 style={{ fontSize: '24px', fontWeight: 700, margin: 0 }}>GitHub Badges Agent</h1>
                         <p style={{ color: 'var(--text-secondary)', margin: '4px 0 0', fontSize: '14px' }}>
-                            Discover your achievements & let AI help you earn more badges
+                            Discover your achievements &amp; let AI autonomously earn more badges for you
                         </p>
                     </div>
                     <button
@@ -243,6 +282,8 @@ export default function BadgesPage() {
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '14px' }}>
                             {filteredBadges.map(badge => {
                                 const tc = tierColors[badge.tier];
+                                const isEarning = earningBadge === badge.id;
+                                const result = earnedResults[badge.id];
                                 return (
                                     <div
                                         key={badge.id}
@@ -293,10 +334,44 @@ export default function BadgesPage() {
                                                 transition: 'width 0.6s ease',
                                             }} />
                                         </div>
-                                        <div style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'flex', justifyContent: 'space-between' }}>
+                                        <div style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
                                             <span>{badge.current} / {badge.target}</span>
                                             <span>{badge.earned ? '✅' : `${Math.round(badge.progress)}%`}</span>
                                         </div>
+
+                                        {/* Auto-Earn Button */}
+                                        {!badge.earned && (
+                                            <>
+                                                {result ? (
+                                                    <div style={{ fontSize: '11px', color: '#22c55e', lineHeight: '1.6' }}>
+                                                        {result.map((r, i) => (
+                                                            <div key={i}>{r}</div>
+                                                        ))}
+                                                    </div>
+                                                ) : (
+                                                    <button
+                                                        onClick={() => autoEarnBadge(badge)}
+                                                        disabled={isEarning || !!earningBadge}
+                                                        style={{
+                                                            width: '100%', padding: '7px 12px', borderRadius: '8px',
+                                                            background: isEarning ? 'rgba(255,255,255,0.05)' : 'linear-gradient(135deg, rgba(255, 215, 0, 0.15), rgba(139, 92, 246, 0.15))',
+                                                            border: '1px solid rgba(255,255,255,0.1)',
+                                                            color: isEarning ? 'var(--text-muted)' : '#FFD700',
+                                                            fontSize: '11px', fontWeight: 600,
+                                                            cursor: isEarning ? 'wait' : 'pointer',
+                                                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+                                                            transition: 'all 0.2s',
+                                                        }}
+                                                    >
+                                                        {isEarning ? (
+                                                            <><Loader2 size={12} className="animate-spin" /> Working...</>
+                                                        ) : (
+                                                            <><Zap size={12} /> Auto-Earn</>
+                                                        )}
+                                                    </button>
+                                                )}
+                                            </>
+                                        )}
                                     </div>
                                 );
                             })}
@@ -334,7 +409,7 @@ export default function BadgesPage() {
                                     {[
                                         'How do I earn more stars?',
                                         'What badges am I closest to?',
-                                        'Tips for growing my followers?',
+                                        'Auto-earn all my easy badges',
                                     ].map(suggestion => (
                                         <button
                                             key={suggestion}

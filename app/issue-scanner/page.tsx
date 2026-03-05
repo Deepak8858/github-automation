@@ -16,6 +16,10 @@ import {
     Shield,
     Zap,
     BarChart3,
+    Loader2,
+    CheckCircle2,
+    GitPullRequest,
+    Bot,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useSettings, useConnectedRepos, useStats, useActivity } from '../lib/store';
@@ -30,6 +34,9 @@ export default function IssueScannerPage() {
     const [scanning, setScanning] = useState(false);
     const [scanResult, setScanResult] = useState<ScanResult | null>(null);
     const [creatingIssue, setCreatingIssue] = useState<string | null>(null);
+    const [solvingIssue, setSolvingIssue] = useState<string | null>(null);
+    const [createdIssues, setCreatedIssues] = useState<Record<string, { number: number; url: string }>>({});
+    const [solvedIssues, setSolvedIssues] = useState<Record<string, { prUrl: string; error?: string }>>({});
     const [mounted, setMounted] = useState(false);
 
     useEffect(() => setMounted(true), []);
@@ -51,6 +58,8 @@ export default function IssueScannerPage() {
         setSelectedRepo(repoFullName);
         setScanning(true);
         setScanResult(null);
+        setCreatedIssues({});
+        setSolvedIssues({});
 
         try {
             const res = await fetch('/api/ai/scan', {
@@ -118,6 +127,8 @@ ${issue.suggestedFix}
             });
 
             if (res.ok) {
+                const data = await res.json();
+                setCreatedIssues(prev => ({ ...prev, [issue.id]: { number: data.number, url: data.html_url || `https://github.com/${selectedRepo}/issues/${data.number}` } }));
                 incrementStat('issuesFixed');
                 addActivity({
                     type: 'issue-created',
@@ -126,7 +137,7 @@ ${issue.suggestedFix}
                     repo: selectedRepo,
                     status: 'success',
                 });
-                toast.success('Issue created on GitHub!');
+                toast.success(`Issue #${data.number} created on GitHub!`);
             } else {
                 toast.error('Failed to create issue');
             }
@@ -134,6 +145,74 @@ ${issue.suggestedFix}
             toast.error('Failed to create issue');
         }
         setCreatingIssue(null);
+    };
+
+    const solveIssue = async (issue: ScannedIssue) => {
+        const aiConfig = getActiveAIKey();
+        if (!aiConfig) {
+            toast.error('Please set an AI API key in Settings');
+            return;
+        }
+
+        const createdIssue = createdIssues[issue.id];
+        if (!createdIssue) {
+            toast.error('Please create the issue on GitHub first');
+            return;
+        }
+
+        setSolvingIssue(issue.id);
+
+        try {
+            const [owner, repo] = selectedRepo.split('/');
+            const res = await fetch('/api/ai/auto-solve', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    githubToken: settings.githubToken,
+                    provider: aiConfig.provider,
+                    apiKey: aiConfig.key,
+                    owner,
+                    repo,
+                    issueNumber: createdIssue.number,
+                    issueTitle: issue.title,
+                    issueBody: issue.description,
+                    targetFile: issue.file,
+                    suggestedFix: issue.suggestedFix,
+                }),
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                setSolvedIssues(prev => ({ ...prev, [issue.id]: { prUrl: data.prUrl } }));
+                addActivity({
+                    type: 'fix-applied',
+                    title: `Auto-Solved: ${issue.title}`,
+                    description: `PR #${data.prNumber} opened, Issue #${createdIssue.number} closed`,
+                    repo: selectedRepo,
+                    status: 'success',
+                    url: data.prUrl,
+                });
+                toast.success(`🤖 Issue solved! PR opened and issue closed.`);
+            } else {
+                const err = await res.json();
+                setSolvedIssues(prev => ({ ...prev, [issue.id]: { prUrl: '', error: err.error } }));
+                toast.error(err.error || 'Auto-solve failed');
+            }
+        } catch (err: any) {
+            setSolvedIssues(prev => ({ ...prev, [issue.id]: { prUrl: '', error: err.message } }));
+            toast.error('Auto-solve failed');
+        }
+        setSolvingIssue(null);
+    };
+
+    const createAndSolve = async (issue: ScannedIssue) => {
+        // If issue not created yet, create it first
+        if (!createdIssues[issue.id]) {
+            await createGitHubIssue(issue);
+            // Small delay then solve
+            await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+        await solveIssue(issue);
     };
 
     const getSeverityConfig = (severity: string) => {
@@ -234,12 +313,16 @@ ${issue.suggestedFix}
 
                     {/* Issue List */}
                     <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '16px' }}>
-                        Found Issues
+                        Found Issues — Create and auto-solve with AI
                     </h3>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                         {scanResult.issues.map((issue, i) => {
                             const config = getSeverityConfig(issue.severity);
                             const Icon = config.icon;
+                            const created = createdIssues[issue.id];
+                            const solved = solvedIssues[issue.id];
+                            const isSolving = solvingIssue === issue.id;
+                            const isCreating = creatingIssue === issue.id;
                             return (
                                 <div
                                     key={issue.id}
@@ -261,31 +344,18 @@ ${issue.suggestedFix}
                                             </span>
                                             <span className="badge badge-neutral">{issue.category}</span>
                                         </div>
-                                        <button
-                                            className="btn-gradient"
-                                            style={{ padding: '6px 14px', fontSize: '12px' }}
-                                            onClick={() => createGitHubIssue(issue)}
-                                            disabled={creatingIssue === issue.id}
-                                        >
-                                            {creatingIssue === issue.id ? (
-                                                <RefreshCw size={12} className="animate-spin-slow" />
-                                            ) : (
-                                                <Plus size={12} />
-                                            )}
-                                            Create Issue
-                                        </button>
                                     </div>
                                     <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: '1.6', marginBottom: '8px' }}>
                                         {issue.description}
                                     </p>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '12px', color: 'var(--text-muted)' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '12px', color: 'var(--text-muted)', marginBottom: '12px' }}>
                                         <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                                             <FileCode size={12} /> {issue.file}
                                         </span>
                                         <span>L{issue.lineStart}–L{issue.lineEnd}</span>
                                     </div>
                                     {issue.suggestedFix && (
-                                        <div className="code-block" style={{ marginTop: '12px', fontSize: '12px' }}>
+                                        <div className="code-block" style={{ marginBottom: '12px', fontSize: '12px' }}>
                                             <div style={{ color: 'var(--text-muted)', marginBottom: '6px', fontSize: '11px' }}>
                                                 💡 Suggested Fix:
                                             </div>
@@ -294,6 +364,62 @@ ${issue.suggestedFix}
                                             </code>
                                         </div>
                                     )}
+
+                                    {/* Action Buttons */}
+                                    <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+                                        {/* Create Issue Button */}
+                                        {!created ? (
+                                            <button
+                                                className="btn-secondary"
+                                                style={{ padding: '8px 16px', fontSize: '12px' }}
+                                                onClick={() => createGitHubIssue(issue)}
+                                                disabled={isCreating}
+                                            >
+                                                {isCreating ? (
+                                                    <><Loader2 size={12} className="animate-spin" /> Creating...</>
+                                                ) : (
+                                                    <><Plus size={12} /> Create Issue</>
+                                                )}
+                                            </button>
+                                        ) : (
+                                            <a
+                                                href={created.url}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                style={{ fontSize: '12px', color: 'var(--success)', display: 'flex', alignItems: 'center', gap: '4px', textDecoration: 'none' }}
+                                            >
+                                                <CheckCircle2 size={14} /> Issue #{created.number}
+                                            </a>
+                                        )}
+
+                                        {/* Auto-Solve (Create + Solve in one click) */}
+                                        {!solved?.prUrl ? (
+                                            <button
+                                                className="btn-gradient"
+                                                style={{ padding: '8px 20px', fontSize: '12px' }}
+                                                onClick={() => createAndSolve(issue)}
+                                                disabled={isSolving || !!solvingIssue}
+                                            >
+                                                {isSolving ? (
+                                                    <><Loader2 size={14} className="animate-spin" /> Solving autonomously...</>
+                                                ) : (
+                                                    <><Bot size={14} /> Auto-Solve &amp; Close</>
+                                                )}
+                                            </button>
+                                        ) : solved.error ? (
+                                            <span style={{ fontSize: '12px', color: 'var(--error)' }}>⚠️ {solved.error}</span>
+                                        ) : (
+                                            <a
+                                                href={solved.prUrl}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="btn-gradient"
+                                                style={{ padding: '8px 16px', fontSize: '12px', textDecoration: 'none' }}
+                                            >
+                                                <CheckCircle2 size={14} /> Solved — View PR
+                                            </a>
+                                        )}
+                                    </div>
                                 </div>
                             );
                         })}
