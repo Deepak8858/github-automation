@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
                     const { GoogleGenAI } = await import('@google/genai');
                     const ai = new GoogleGenAI({ apiKey: effectiveKey });
                     const response = await ai.models.generateContent({
-                        model: 'gemini-1.5-flash',
+                        model: 'gemini-2.5-flash',
                         contents: 'Say "connected" in one word.',
                     });
                     return NextResponse.json({ status: 'connected', response: response.text });

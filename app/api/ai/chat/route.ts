@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
             const systemContext = `You are GitAgent, an AI assistant specializing in GitHub automation, code review, and software engineering. You help users with repositories, code review, debugging, documentation, and best practices. Be concise, technical, and helpful. Format responses with markdown when appropriate.`;
 
             const response = await ai.models.generateContent({
-                model: model || 'gemini-1.5-flash',
+                model: model || 'gemini-2.5-flash',
                 contents: `${systemContext}\n\nUser: ${lastMessage.content}`,
             });
 

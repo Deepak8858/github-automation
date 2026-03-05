@@ -44,7 +44,7 @@ Focus on:
 Return ONLY valid JSON, no markdown formatting.`;
 
     const response = await ai.models.generateContent({
-        model: 'gemini-1.5-pro',
+        model: 'gemini-2.5-pro',
         contents: prompt,
     });
 
@@ -92,7 +92,7 @@ Respond in this exact JSON format:
 Return ONLY valid JSON, no markdown formatting.`;
 
     const response = await ai.models.generateContent({
-        model: 'gemini-1.5-pro',
+        model: 'gemini-2.5-pro',
         contents: prompt,
     });
 
@@ -129,7 +129,7 @@ Respond in this exact JSON format:
 Provide 3-5 practical, specific suggestions. Return ONLY valid JSON, no markdown formatting.`;
 
     const response = await ai.models.generateContent({
-        model: 'gemini-1.5-pro',
+        model: 'gemini-2.5-pro',
         contents: prompt,
     });
 

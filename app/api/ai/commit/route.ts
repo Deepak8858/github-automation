@@ -32,7 +32,7 @@ Return ONLY valid JSON, no markdown formatting.`;
             const ai = new GoogleGenAI({ apiKey: effectiveKey });
 
             const response = await ai.models.generateContent({
-                model: model || 'gemini-1.5-flash',
+                model: model || 'gemini-2.5-flash',
                 contents: prompt,
             });
 
