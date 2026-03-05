@@ -1,14 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { scanCodeForIssues } from '../../../lib/gemini';
+import { scanCodeForIssuesOpenAI } from '../../../lib/openai';
 import { fetchRepoContents, fetchFileContent } from '../../../lib/github';
 
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json();
-        const { githubToken, geminiApiKey, owner, repo } = body;
+        const { githubToken, geminiApiKey, openaiApiKey, provider, owner, repo } = body;
 
-        if (!githubToken || !geminiApiKey || !owner || !repo) {
-            return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+        const effectiveProvider = provider || (openaiApiKey ? 'openai' : 'gemini');
+        const effectiveKey = effectiveProvider === 'gemini' ? (geminiApiKey || '') : (openaiApiKey || '');
+
+        if (!githubToken || !effectiveKey || !owner || !repo) {
+            return NextResponse.json({ error: 'Missing required fields (GitHub token + an AI API key)' }, { status: 400 });
         }
 
         // Fetch repo root contents
@@ -52,8 +56,13 @@ export async function POST(request: NextRequest) {
             });
         }
 
-        // Send to Gemini for analysis
-        const result = await scanCodeForIssues(geminiApiKey, validFiles, `${owner}/${repo}`);
+        // Send to AI for analysis
+        let result;
+        if (effectiveProvider === 'gemini') {
+            result = await scanCodeForIssues(effectiveKey, validFiles, `${owner}/${repo}`);
+        } else {
+            result = await scanCodeForIssuesOpenAI(effectiveKey, validFiles, `${owner}/${repo}`);
+        }
 
         return NextResponse.json(result);
     } catch (error: unknown) {

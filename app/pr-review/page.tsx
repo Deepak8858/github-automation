@@ -62,9 +62,18 @@ export default function PRReviewPage() {
         setLoadingPRs(false);
     };
 
+    const getActiveAIKey = () => {
+        if (settings.activeProvider === 'openai' && settings.openaiApiKey) return { provider: 'openai', key: settings.openaiApiKey };
+        if (settings.activeProvider === 'copilot' && settings.copilotApiKey) return { provider: 'copilot', key: settings.copilotApiKey };
+        if (settings.geminiApiKey) return { provider: 'gemini', key: settings.geminiApiKey };
+        if (settings.openaiApiKey) return { provider: 'openai', key: settings.openaiApiKey };
+        return null;
+    };
+
     const runReview = async (pr: PullRequest) => {
-        if (!settings.geminiApiKey) {
-            toast.error('Please set your Gemini API key in Settings');
+        const aiConfig = getActiveAIKey();
+        if (!aiConfig) {
+            toast.error('Please set an AI API key in Settings');
             return;
         }
         setSelectedPR(pr);
@@ -77,7 +86,10 @@ export default function PRReviewPage() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     githubToken: settings.githubToken,
-                    geminiApiKey: settings.geminiApiKey,
+                    geminiApiKey: aiConfig.provider === 'gemini' ? aiConfig.key : undefined,
+                    openaiApiKey: aiConfig.provider !== 'gemini' ? aiConfig.key : undefined,
+                    provider: aiConfig.provider,
+                    apiKey: aiConfig.key,
                     owner: selectedRepo.split('/')[0],
                     repo: selectedRepo.split('/')[1],
                     pullNumber: pr.number,

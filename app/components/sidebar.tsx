@@ -12,11 +12,17 @@ import {
     Zap,
     ChevronLeft,
     ChevronRight,
+    Sparkles,
+    Code2,
+    GitCommit,
 } from 'lucide-react';
 import { useState } from 'react';
 
 const navItems = [
     { href: '/', label: 'Dashboard', icon: LayoutDashboard },
+    { href: '/ai-playground', label: 'AI Playground', icon: Sparkles },
+    { href: '/code-generator', label: 'Code Generator', icon: Code2 },
+    { href: '/commit-generator', label: 'Commit Gen', icon: GitCommit },
     { href: '/repositories', label: 'Repositories', icon: GitFork },
     { href: '/pr-review', label: 'PR Review', icon: GitPullRequest },
     { href: '/issue-scanner', label: 'Issue Scanner', icon: Search },

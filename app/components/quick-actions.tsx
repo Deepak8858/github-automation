@@ -1,28 +1,56 @@
-import { GitPullRequest, Bug, ScanSearch, Plus } from "lucide-react";
+import Link from "next/link";
+import { GitPullRequest, Bug, ScanSearch, Plus, Sparkles, Code2, GitCommit } from "lucide-react";
 
 export default function QuickActions() {
     const actions = [
         {
-            title: "Review Open PRs",
-            description: "Analyze 3 pending pull requests for security and style.",
+            title: "AI Playground",
+            description: "Chat with Gemini, OpenAI, or GitHub Copilot for code help.",
+            icon: <Sparkles className="w-6 h-6" style={{ color: '#8B5CF6' }} />,
+            color: "from-accent-primary/20 to-transparent",
+            borderColor: "border-accent-primary/30",
+            href: "/ai-playground",
+        },
+        {
+            title: "Generate Code",
+            description: "Generate production-ready code with AI in any language.",
+            icon: <Code2 className="w-6 h-6" style={{ color: '#10A37F' }} />,
+            color: "from-success/20 to-transparent",
+            borderColor: "border-success/30",
+            href: "/code-generator",
+        },
+        {
+            title: "Commit Generator",
+            description: "Create conventional commit messages from your diffs.",
+            icon: <GitCommit className="w-6 h-6" style={{ color: '#F59E0B' }} />,
+            color: "from-warning/20 to-transparent",
+            borderColor: "border-warning/30",
+            href: "/commit-generator",
+        },
+        {
+            title: "Review PRs",
+            description: "AI-powered pull request analysis for security and quality.",
             icon: <GitPullRequest className="w-6 h-6 text-accent-secondary" />,
             color: "from-accent-primary/20 to-transparent",
-            borderColor: "border-accent-primary/30"
+            borderColor: "border-accent-primary/30",
+            href: "/pr-review",
+        },
+        {
+            title: "Scan Issues",
+            description: "Scan repositories for bugs, vulnerabilities, and code smells.",
+            icon: <ScanSearch className="w-6 h-6 text-success" />,
+            color: "from-success/20 to-transparent",
+            borderColor: "border-success/30",
+            href: "/issue-scanner",
         },
         {
             title: "Triage Issues",
-            description: "Categorize and label 12 unassigned user issues.",
+            description: "Categorize and label open issues with AI assistance.",
             icon: <Bug className="w-6 h-6 text-warning" />,
             color: "from-warning/20 to-transparent",
-            borderColor: "border-warning/30"
+            borderColor: "border-warning/30",
+            href: "/repositories",
         },
-        {
-            title: "Scan Repository",
-            description: "Check for dependency vulnerabilities and stale branches.",
-            icon: <ScanSearch className="w-6 h-6 text-success" />,
-            color: "from-success/20 to-transparent",
-            borderColor: "border-success/30"
-        }
     ];
 
     return (
@@ -32,9 +60,11 @@ export default function QuickActions() {
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {actions.map((action, i) => (
-                    <button
+                    <Link
                         key={i}
-                        className={`glass-card p-5 text-left flex flex-col group transition-all duration-300 hover:scale-[1.02] border hover:${action.borderColor} hover:animate-float-card`}
+                        href={action.href}
+                        className={`glass-card p-5 text-left flex flex-col group transition-all duration-300 hover:scale-[1.02] border hover:${action.borderColor} no-underline`}
+                        style={{ textDecoration: 'none' }}
                     >
                         <div className={`w-12 h-12 rounded-lg flex items-center justify-center mb-4 bg-linear-to-br ${action.color} border border-black/5`}>
                             {action.icon}
@@ -45,7 +75,7 @@ export default function QuickActions() {
                         <p className="text-sm text-text-muted leading-relaxed">
                             {action.description}
                         </p>
-                    </button>
+                    </Link>
                 ))}
             </div>
         </section>

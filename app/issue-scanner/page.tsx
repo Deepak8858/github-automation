@@ -34,9 +34,18 @@ export default function IssueScannerPage() {
 
     useEffect(() => setMounted(true), []);
 
+    const getActiveAIKey = () => {
+        if (settings.activeProvider === 'openai' && settings.openaiApiKey) return { provider: 'openai', key: settings.openaiApiKey };
+        if (settings.activeProvider === 'copilot' && settings.copilotApiKey) return { provider: 'copilot', key: settings.copilotApiKey };
+        if (settings.geminiApiKey) return { provider: 'gemini', key: settings.geminiApiKey };
+        if (settings.openaiApiKey) return { provider: 'openai', key: settings.openaiApiKey };
+        return null;
+    };
+
     const runScan = async (repoFullName: string) => {
-        if (!settings.githubToken || !settings.geminiApiKey) {
-            toast.error('Please set both GitHub token and Gemini API key in Settings');
+        const aiConfig = getActiveAIKey();
+        if (!settings.githubToken || !aiConfig) {
+            toast.error('Please set both GitHub token and an AI API key in Settings');
             return;
         }
         setSelectedRepo(repoFullName);
@@ -49,7 +58,9 @@ export default function IssueScannerPage() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     githubToken: settings.githubToken,
-                    geminiApiKey: settings.geminiApiKey,
+                    geminiApiKey: aiConfig.provider === 'gemini' ? aiConfig.key : undefined,
+                    openaiApiKey: aiConfig.provider !== 'gemini' ? aiConfig.key : undefined,
+                    provider: aiConfig.provider,
                     owner: repoFullName.split('/')[0],
                     repo: repoFullName.split('/')[1],
                 }),

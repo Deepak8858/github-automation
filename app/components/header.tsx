@@ -6,6 +6,9 @@ import { ThemeToggle } from './theme-toggle';
 
 const pageTitles: Record<string, { title: string; subtitle: string }> = {
     '/': { title: 'Dashboard', subtitle: 'Overview of your GitHub automation' },
+    '/ai-playground': { title: 'AI Playground', subtitle: 'Chat with multiple AI providers' },
+    '/code-generator': { title: 'Code Generator', subtitle: 'Generate code with AI assistance' },
+    '/commit-generator': { title: 'Commit Generator', subtitle: 'AI-powered conventional commits' },
     '/repositories': { title: 'Repositories', subtitle: 'Manage your connected repositories' },
     '/pr-review': { title: 'PR Review', subtitle: 'AI-powered pull request analysis' },
     '/issue-scanner': { title: 'Issue Scanner', subtitle: 'Scan repos for bugs & improvements' },
@@ -25,7 +28,7 @@ export default function Header() {
                 left: 'var(--sidebar-width)',
                 right: 0,
                 height: 'var(--header-height)',
-                background: 'rgba(255, 255, 255, 0.85)',
+                background: 'var(--bg-glass)',
                 backdropFilter: 'blur(12px)',
                 borderBottom: '1px solid var(--border-color)',
                 display: 'flex',

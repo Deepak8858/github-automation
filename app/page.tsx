@@ -8,7 +8,7 @@ export default function Home() {
     <div className="animate-fade-in w-full max-w-5xl mx-auto">
       <header className="mb-8">
         <h1 className="text-3xl font-bold gradient-text animate-gradient-x mb-2 tracking-tight">Agent Dashboard</h1>
-        <p className="text-text-muted">Monitor and control your GitHub automation agent.</p>
+        <p className="text-text-muted">Monitor and control your multi-AI GitHub automation agent.</p>
       </header>
 
       <div className="animate-fade-in delay-100">

@@ -6,6 +6,10 @@ import type { AppSettings, ActivityItem, DashboardStats } from './types';
 const DEFAULT_SETTINGS: AppSettings = {
     githubToken: '',
     geminiApiKey: '',
+    openaiApiKey: '',
+    copilotApiKey: '',
+    activeProvider: 'gemini',
+    selectedModel: '',
     autoReview: false,
     autoFix: false,
     scanSchedule: 'manual',
@@ -16,6 +20,8 @@ const DEFAULT_STATS: DashboardStats = {
     prsReviewed: 0,
     issuesFixed: 0,
     contributions: 0,
+    aiChats: 0,
+    codeGenerated: 0,
 };
 
 function getStoredValue<T>(key: string, defaultValue: T): T {
