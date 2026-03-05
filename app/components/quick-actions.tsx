@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { GitPullRequest, Bug, ScanSearch, Plus, Sparkles, Code2, GitCommit } from "lucide-react";
+import { GitPullRequest, Bug, ScanSearch, Plus, Sparkles, Code2, GitCommit, Zap } from "lucide-react";
 
 export default function QuickActions() {
     const actions = [

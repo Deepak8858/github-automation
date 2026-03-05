@@ -17,6 +17,7 @@ export default function SettingsPage() {
     const [githubStatus, setGithubStatus] = useState<'idle' | 'testing' | 'success' | 'error'>('idle');
     const [localGithubToken, setLocalGithubToken] = useState('');
     const [localKeys, setLocalKeys] = useState<Record<string, string>>({});
+    const [serverConfig, setServerConfig] = useState<Record<string, boolean>>({});
 
     useEffect(() => {
         if (loaded) {
@@ -26,6 +27,11 @@ export default function SettingsPage() {
                 keys[p.id] = (settings[p.keyName] as string) || '';
             });
             setLocalKeys(keys);
+
+            fetch('/api/settings/config')
+                .then(res => res.json())
+                .then(data => setServerConfig(data))
+                .catch(err => console.error('Failed to fetch server config', err));
         }
     }, [loaded, settings]);
 
@@ -99,6 +105,7 @@ export default function SettingsPage() {
                 <div style={{ marginBottom: '20px' }}>
                     <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '8px' }}>
                         <Key size={16} /> Personal Access Token {getStatusIcon(githubStatus)}
+                        {serverConfig.hasGithubToken && <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '8px', background: 'rgba(56, 189, 248, 0.1)', color: '#38bdf8', fontWeight: 700, marginLeft: '4px' }}>SERVER KEY ACTIVE</span>}
                     </label>
                     <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '10px' }}>
                         Required for repository access.{' '}
@@ -137,6 +144,11 @@ export default function SettingsPage() {
                                     {settings.activeProvider === provider.id && (
                                         <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '8px', background: `${provider.color}20`, color: provider.color, fontWeight: 700 }}>ACTIVE</span>
                                     )}
+                                    {((provider.id === 'gemini' && serverConfig.hasGeminiKey) ||
+                                        (provider.id === 'openai' && serverConfig.hasOpenAiKey) ||
+                                        (provider.id === 'copilot' && serverConfig.hasCopilotKey)) && (
+                                            <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '8px', background: 'rgba(56, 189, 248, 0.1)', color: '#38bdf8', fontWeight: 700 }}>SERVER KEY ACTIVE</span>
+                                        )}
                                 </label>
                                 <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '2px 0 0' }}>{provider.description}</p>
                             </div>
