@@ -62,7 +62,7 @@ ${fileContent.substring(0, 8000)}
                 const { GoogleGenAI } = await import('@google/genai');
                 const ai = new GoogleGenAI({ apiKey: effectiveKey });
                 const response = await ai.models.generateContent({
-                    model: 'gemini-2.5-flash',
+                    model: 'gemini-1.5-flash',
                     contents: prompt,
                 });
                 const text = response.text || '{}';
@@ -125,7 +125,7 @@ Respond ONLY with the raw file content. Do not wrap it in markdown code blocks. 
                 const { GoogleGenAI } = await import('@google/genai');
                 const ai = new GoogleGenAI({ apiKey: effectiveKey });
                 const response = await ai.models.generateContent({
-                    model: 'gemini-2.5-pro',
+                    model: 'gemini-1.5-pro',
                     contents: prompt,
                 });
                 newContent = response.text || fileContent;

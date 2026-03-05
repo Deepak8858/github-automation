@@ -26,8 +26,8 @@ export const AI_PROVIDERS: AIProviderConfig[] = [
         name: 'Google Gemini',
         icon: '✦',
         description: 'Google\'s most capable AI model with advanced reasoning and code understanding',
-        models: ['gemini-2.5-pro', 'gemini-2.5-flash', 'gemini-2.0-flash'],
-        defaultModel: 'gemini-2.5-pro',
+        models: ['gemini-1.5-pro', 'gemini-1.5-flash'],
+        defaultModel: 'gemini-1.5-pro',
         color: '#4285F4',
         gradient: 'linear-gradient(135deg, #4285F4, #34A853, #FBBC04, #EA4335)',
         requiresKey: true,
@@ -149,7 +149,7 @@ export async function chatWithProvider(
             const ai = new GoogleGenAI({ apiKey: settings.geminiApiKey });
             const lastMessage = messages[messages.length - 1];
             const response = await ai.models.generateContent({
-                model: model || 'gemini-2.5-flash',
+                model: model || 'gemini-1.5-flash',
                 contents: lastMessage.content,
             });
             return response.text || 'No response generated.';
@@ -176,7 +176,7 @@ export async function generateCodeWithProvider(
             const ai = new GoogleGenAI({ apiKey: settings.geminiApiKey });
             const systemPrompt = `You are an expert software engineer. Generate clean, production-ready ${language} code based on the user's request. Respond in JSON format with keys: code, language, explanation, dependencies (array), filename.`;
             const response = await ai.models.generateContent({
-                model: model || 'gemini-2.5-flash',
+                model: model || 'gemini-1.5-flash',
                 contents: `${systemPrompt}\n\nRequest: ${prompt}`,
             });
             const text = response.text || '{}';
@@ -204,7 +204,7 @@ export async function generateCommitWithProvider(
             const ai = new GoogleGenAI({ apiKey: settings.geminiApiKey });
             const prompt = `Generate a conventional commit message for this diff. Respond in JSON format with keys: type, scope, subject, body, breaking, fullMessage.\n\nDiff:\n${diff.substring(0, 10000)}`;
             const response = await ai.models.generateContent({
-                model: model || 'gemini-2.5-flash',
+                model: model || 'gemini-1.5-flash',
                 contents: prompt,
             });
             const text = response.text || '{}';

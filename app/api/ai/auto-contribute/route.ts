@@ -91,7 +91,7 @@ Respond ONLY with the raw file content. Do not wrap it in markdown code blocks. 
                 const { GoogleGenAI } = await import('@google/genai');
                 const ai = new GoogleGenAI({ apiKey });
                 const response = await ai.models.generateContent({
-                    model: 'gemini-2.0-flash',
+                    model: 'gemini-1.5-flash',
                     contents: prompt,
                 });
                 newContent = response.text || fileContent;

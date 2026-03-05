@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
                             const { GoogleGenAI } = await import('@google/genai');
                             const ai = new GoogleGenAI({ apiKey });
                             const response = await ai.models.generateContent({
-                                model: 'gemini-2.0-flash',
+                                model: 'gemini-1.5-flash',
                                 contents: `Generate a professional README.md for a new open-source project called "${repoName}". Include: title, description, features, installation, usage, contributing guidelines, license section. Make it look impressive. Return just the markdown content.`,
                             });
                             readmeContent = response.text || readmeContent;
