@@ -21,6 +21,7 @@ import { useState } from 'react';
 const navItems = [
     { href: '/', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/ai-playground', label: 'AI Playground', icon: Sparkles },
+    { href: '/auto-agent', label: 'Auto Agent', icon: Zap },
     { href: '/code-generator', label: 'Code Generator', icon: Code2 },
     { href: '/commit-generator', label: 'Commit Gen', icon: GitCommit },
     { href: '/repositories', label: 'Repositories', icon: GitFork },

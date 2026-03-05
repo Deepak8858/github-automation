@@ -9,14 +9,19 @@ export async function POST(request: NextRequest) {
         const { githubToken, geminiApiKey, openaiApiKey, provider, owner, repo } = body;
 
         const effectiveProvider = provider || (openaiApiKey ? 'openai' : 'gemini');
-        const effectiveKey = effectiveProvider === 'gemini' ? (geminiApiKey || '') : (openaiApiKey || '');
+        let effectiveKey = effectiveProvider === 'gemini' ? (geminiApiKey || process.env.GEMINI_API_KEY || '') : (openaiApiKey || process.env.OPENAI_API_KEY || '');
+        if (effectiveProvider === 'copilot' && !effectiveKey) {
+            effectiveKey = process.env.COPILOT_API_KEY || '';
+        }
 
-        if (!githubToken || !effectiveKey || !owner || !repo) {
+        const effectiveGithubToken = githubToken || process.env.GITHUB_TOKEN;
+
+        if (!effectiveGithubToken || !effectiveKey || !owner || !repo) {
             return NextResponse.json({ error: 'Missing required fields (GitHub token + an AI API key)' }, { status: 400 });
         }
 
         // Fetch repo root contents
-        const contents = await fetchRepoContents(githubToken, owner, repo);
+        const contents = await fetchRepoContents(effectiveGithubToken, owner, repo);
 
         if (!Array.isArray(contents)) {
             return NextResponse.json({ error: 'Could not list repo contents' }, { status: 500 });
@@ -35,7 +40,7 @@ export async function POST(request: NextRequest) {
         const filesWithContent = await Promise.all(
             codeFiles.map(async (file: { name: string; path?: string }) => {
                 try {
-                    const content = await fetchFileContent(githubToken, owner, repo, file.path || file.name);
+                    const content = await fetchFileContent(effectiveGithubToken, owner, repo, file.path || file.name);
                     return { path: file.name, content };
                 } catch {
                     return null;

@@ -172,3 +172,76 @@ export async function searchTrendingRepos(token: string, language?: string) {
     });
     return data.items;
 }
+
+export async function createBranch(token: string, owner: string, repo: string, newBranchName: string, baseBranch: string = 'main') {
+    const octokit = createOctokit(token);
+
+    // Get the SHA of the base branch
+    const baseRef = await octokit.rest.git.getRef({
+        owner,
+        repo,
+        ref: `heads/${baseBranch}`,
+    }).catch(async () => {
+        // Fallback to master if main doesn't exist
+        if (baseBranch === 'main') {
+            return await octokit.rest.git.getRef({
+                owner,
+                repo,
+                ref: 'heads/master',
+            });
+        }
+        throw new Error(`Base branch ${baseBranch} not found`);
+    });
+
+    const sha = baseRef.data.object.sha;
+
+    // Create a new reference (branch)
+    const { data } = await octokit.rest.git.createRef({
+        owner,
+        repo,
+        ref: `refs/heads/${newBranchName}`,
+        sha,
+    });
+
+    return data;
+}
+
+export async function commitFile(
+    token: string,
+    owner: string,
+    repo: string,
+    path: string,
+    message: string,
+    content: string,
+    branch: string
+) {
+    const octokit = createOctokit(token);
+
+    // We need to fetch the file first to get its SHA so we can update it
+    let sha: string | undefined = undefined;
+    try {
+        const { data } = await octokit.rest.repos.getContent({
+            owner,
+            repo,
+            path,
+            ref: branch,
+        });
+        if (!Array.isArray(data) && data.type === 'file') {
+            sha = data.sha;
+        }
+    } catch {
+        // File doesn't exist yet, which is fine for new files
+    }
+
+    const { data } = await octokit.rest.repos.createOrUpdateFileContents({
+        owner,
+        repo,
+        path,
+        message,
+        content: Buffer.from(content).toString('base64'),
+        branch,
+        sha,
+    });
+
+    return data;
+}

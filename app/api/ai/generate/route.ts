@@ -5,8 +5,15 @@ export async function POST(request: NextRequest) {
         const body = await request.json();
         const { provider, apiKey, prompt, language, model } = body;
 
-        if (!apiKey || !prompt || !provider) {
-            return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+        let effectiveKey = apiKey;
+        if (!effectiveKey) {
+            if (provider === 'gemini') effectiveKey = process.env.GEMINI_API_KEY;
+            else if (provider === 'openai') effectiveKey = process.env.OPENAI_API_KEY;
+            else if (provider === 'copilot') effectiveKey = process.env.COPILOT_API_KEY;
+        }
+
+        if (!effectiveKey || !prompt || !provider) {
+            return NextResponse.json({ error: 'Missing required fields or API key' }, { status: 400 });
         }
 
         const systemPrompt = `You are an expert software engineer. Generate clean, production-ready ${language || 'code'} based on the user's request.
@@ -26,7 +33,7 @@ Return ONLY valid JSON, no markdown formatting.`;
 
         if (provider === 'gemini') {
             const { GoogleGenAI } = await import('@google/genai');
-            const ai = new GoogleGenAI({ apiKey });
+            const ai = new GoogleGenAI({ apiKey: effectiveKey });
 
             const response = await ai.models.generateContent({
                 model: model || 'gemini-2.5-flash',
@@ -38,7 +45,7 @@ Return ONLY valid JSON, no markdown formatting.`;
             result = JSON.parse(cleaned);
         } else {
             const OpenAI = (await import('openai')).default;
-            const openai = new OpenAI({ apiKey });
+            const openai = new OpenAI({ apiKey: effectiveKey });
 
             const response = await openai.chat.completions.create({
                 model: model || 'gpt-4o',

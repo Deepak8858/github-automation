@@ -4,6 +4,14 @@ import { GitPullRequest, Bug, ScanSearch, Plus, Sparkles, Code2, GitCommit } fro
 export default function QuickActions() {
     const actions = [
         {
+            title: "Autonomous Agent",
+            description: "AI agent that analyzes repos, creates issues, and submits PRs to fix them.",
+            icon: <Zap className="w-6 h-6" style={{ color: '#F43F5E' }} />,
+            color: "from-rose-500/20 to-transparent",
+            borderColor: "border-rose-500/30",
+            href: "/auto-agent",
+        },
+        {
             title: "AI Playground",
             description: "Chat with Gemini, OpenAI, or GitHub Copilot for code help.",
             icon: <Sparkles className="w-6 h-6" style={{ color: '#8B5CF6' }} />,

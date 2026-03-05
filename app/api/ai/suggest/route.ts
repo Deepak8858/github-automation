@@ -8,7 +8,10 @@ export async function POST(request: NextRequest) {
         const { geminiApiKey, openaiApiKey, provider, repoInfo } = body;
 
         const effectiveProvider = provider || (openaiApiKey ? 'openai' : 'gemini');
-        const effectiveKey = effectiveProvider === 'gemini' ? (geminiApiKey || '') : (openaiApiKey || '');
+        let effectiveKey = effectiveProvider === 'gemini' ? (geminiApiKey || process.env.GEMINI_API_KEY || '') : (openaiApiKey || process.env.OPENAI_API_KEY || '');
+        if (effectiveProvider === 'copilot' && !effectiveKey) {
+            effectiveKey = process.env.COPILOT_API_KEY || '';
+        }
 
         if (!effectiveKey || !repoInfo) {
             return NextResponse.json({ error: 'Missing required fields (AI API key + repo info)' }, { status: 400 });

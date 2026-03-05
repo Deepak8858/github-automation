@@ -5,15 +5,22 @@ export async function POST(request: NextRequest) {
         const body = await request.json();
         const { provider, apiKey, messages, model } = body;
 
-        if (!apiKey || !messages || !provider) {
-            return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+        let effectiveKey = apiKey;
+        if (!effectiveKey) {
+            if (provider === 'gemini') effectiveKey = process.env.GEMINI_API_KEY;
+            else if (provider === 'openai') effectiveKey = process.env.OPENAI_API_KEY;
+            else if (provider === 'copilot') effectiveKey = process.env.COPILOT_API_KEY;
+        }
+
+        if (!effectiveKey || !messages || !provider) {
+            return NextResponse.json({ error: 'Missing required API key' }, { status: 400 });
         }
 
         let responseText = '';
 
         if (provider === 'gemini') {
             const { GoogleGenAI } = await import('@google/genai');
-            const ai = new GoogleGenAI({ apiKey });
+            const ai = new GoogleGenAI({ apiKey: effectiveKey });
             const lastMessage = messages[messages.length - 1];
 
             const systemContext = `You are GitAgent, an AI assistant specializing in GitHub automation, code review, and software engineering. You help users with repositories, code review, debugging, documentation, and best practices. Be concise, technical, and helpful. Format responses with markdown when appropriate.`;

@@ -5,8 +5,15 @@ export async function POST(request: NextRequest) {
         const body = await request.json();
         const { provider, apiKey, diff, model } = body;
 
-        if (!apiKey || !diff || !provider) {
-            return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+        let effectiveKey = apiKey;
+        if (!effectiveKey) {
+            if (provider === 'gemini') effectiveKey = process.env.GEMINI_API_KEY;
+            else if (provider === 'openai') effectiveKey = process.env.OPENAI_API_KEY;
+            else if (provider === 'copilot') effectiveKey = process.env.COPILOT_API_KEY;
+        }
+
+        if (!effectiveKey || !diff || !provider) {
+            return NextResponse.json({ error: 'Missing required API key or fields' }, { status: 400 });
         }
 
         const prompt = `Generate a conventional commit message for this diff. Respond in JSON format with keys: type (feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert), scope (optional), subject (max 72 chars), body (optional longer description), breaking (boolean), fullMessage (the complete formatted commit message).
@@ -22,7 +29,7 @@ Return ONLY valid JSON, no markdown formatting.`;
 
         if (provider === 'gemini') {
             const { GoogleGenAI } = await import('@google/genai');
-            const ai = new GoogleGenAI({ apiKey });
+            const ai = new GoogleGenAI({ apiKey: effectiveKey });
 
             const response = await ai.models.generateContent({
                 model: model || 'gemini-2.5-flash',
@@ -34,7 +41,7 @@ Return ONLY valid JSON, no markdown formatting.`;
             result = JSON.parse(cleaned);
         } else {
             const OpenAI = (await import('openai')).default;
-            const openai = new OpenAI({ apiKey });
+            const openai = new OpenAI({ apiKey: effectiveKey });
 
             const response = await openai.chat.completions.create({
                 model: model || 'gpt-4o',

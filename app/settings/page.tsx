@@ -215,14 +215,14 @@ export default function SettingsPage() {
                 </div>
             </div>
 
-            {/* Security Note */}
-            <div className="glass-card animate-fade-in delay-400" style={{ padding: '20px', borderLeft: '3px solid var(--warning)' }}>
+            {/* Security & Configuration */}
+            <div className="glass-card animate-fade-in delay-400" style={{ padding: '20px', borderLeft: '3px solid #38bdf8' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                    <Shield size={16} style={{ color: 'var(--warning)' }} />
-                    <span style={{ fontWeight: 600, fontSize: '14px' }}>Security Note</span>
+                    <Shield size={16} style={{ color: '#38bdf8' }} />
+                    <span style={{ fontWeight: 600, fontSize: '14px' }}>Security &amp; Configuration</span>
                 </div>
                 <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: '1.6' }}>
-                    API keys are stored locally in your browser&apos;s localStorage. They are never sent to third-party servers — only directly to the respective APIs (GitHub, Google Gemini, OpenAI, GitHub Copilot). For production use, consider implementing proper OAuth and server-side key storage.
+                    Keys entered here are saved in your browser&apos;s localStorage for local development. For production deployments, you can leave these blank and instead configure <code>GEMINI_API_KEY</code>, <code>OPENAI_API_KEY</code>, <code>COPILOT_API_KEY</code>, and <code>GITHUB_TOKEN</code> in your server&apos;s environment variables.
                 </p>
             </div>
         </form>

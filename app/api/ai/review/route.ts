@@ -47,14 +47,19 @@ export async function POST(request: NextRequest) {
         const { githubToken, geminiApiKey, openaiApiKey, provider, apiKey, owner, repo, pullNumber, prTitle, prDescription } = body;
 
         const effectiveProvider = provider || (openaiApiKey ? 'openai' : 'gemini');
-        const effectiveKey = effectiveProvider === 'gemini' ? (geminiApiKey || apiKey || '') : (openaiApiKey || apiKey || '');
+        let effectiveKey = effectiveProvider === 'gemini' ? (geminiApiKey || apiKey || process.env.GEMINI_API_KEY || '') : (openaiApiKey || apiKey || process.env.OPENAI_API_KEY || '');
+        if (effectiveProvider === 'copilot' && !effectiveKey) {
+            effectiveKey = process.env.COPILOT_API_KEY || '';
+        }
 
-        if (!githubToken || !effectiveKey || !owner || !repo || !pullNumber) {
+        const effectiveGithubToken = githubToken || process.env.GITHUB_TOKEN;
+
+        if (!effectiveGithubToken || !effectiveKey || !owner || !repo || !pullNumber) {
             return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
         }
 
         // Fetch the PR diff from GitHub
-        const diff = await fetchPRDiff(githubToken, owner, repo, pullNumber);
+        const diff = await fetchPRDiff(effectiveGithubToken, owner, repo, pullNumber);
 
         // Send to AI for review
         let review;
