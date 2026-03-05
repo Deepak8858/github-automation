@@ -90,7 +90,7 @@ export default function SettingsPage() {
     if (!loaded) return null;
 
     return (
-        <div style={{ maxWidth: '760px' }}>
+        <form onSubmit={e => e.preventDefault()} autoComplete="off" style={{ maxWidth: '760px' }}>
             {/* GitHub Token */}
             <div className="glass-card animate-fade-in" style={{ padding: '28px', marginBottom: '24px' }}>
                 <h3 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -225,6 +225,6 @@ export default function SettingsPage() {
                     API keys are stored locally in your browser&apos;s localStorage. They are never sent to third-party servers — only directly to the respective APIs (GitHub, Google Gemini, OpenAI, GitHub Copilot). For production use, consider implementing proper OAuth and server-side key storage.
                 </p>
             </div>
-        </div>
+        </form>
     );
 }
