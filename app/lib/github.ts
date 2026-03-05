@@ -245,3 +245,55 @@ export async function commitFile(
 
     return data;
 }
+
+export async function fetchUserProfile(token: string) {
+    const octokit = createOctokit(token);
+    const { data } = await octokit.rest.users.getAuthenticated();
+    return data;
+}
+
+export async function fetchUserBadgeStats(token: string) {
+    const octokit = createOctokit(token);
+    const user = await fetchUserProfile(token);
+
+    // Fetch repos with star counts
+    const repos = await fetchUserRepos(token);
+    const totalStars = repos.reduce((sum: number, r: any) => sum + (r.stargazers_count || 0), 0);
+    const totalForks = repos.reduce((sum: number, r: any) => sum + (r.forks_count || 0), 0);
+
+    // Fetch recent PRs authored by the user
+    let prCount = 0;
+    try {
+        const { data: prSearch } = await octokit.rest.search.issuesAndPullRequests({
+            q: `author:${user.login} type:pr`,
+            per_page: 1,
+        });
+        prCount = prSearch.total_count;
+    } catch { /* ignore */ }
+
+    // Fetch recent issues authored by the user
+    let issueCount = 0;
+    try {
+        const { data: issueSearch } = await octokit.rest.search.issuesAndPullRequests({
+            q: `author:${user.login} type:issue`,
+            per_page: 1,
+        });
+        issueCount = issueSearch.total_count;
+    } catch { /* ignore */ }
+
+    return {
+        login: user.login,
+        avatarUrl: user.avatar_url,
+        name: user.name || user.login,
+        bio: user.bio,
+        publicRepos: user.public_repos,
+        followers: user.followers,
+        following: user.following,
+        publicGists: user.public_gists || 0,
+        totalStars,
+        totalForks,
+        prCount,
+        issueCount,
+        createdAt: user.created_at,
+    };
+}

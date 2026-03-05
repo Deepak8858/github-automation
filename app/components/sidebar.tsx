@@ -15,6 +15,7 @@ import {
     Sparkles,
     Code2,
     GitCommit,
+    Award,
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -28,6 +29,7 @@ const navItems = [
     { href: '/pr-review', label: 'PR Review', icon: GitPullRequest },
     { href: '/issue-scanner', label: 'Issue Scanner', icon: Search },
     { href: '/contributions', label: 'Contributions', icon: Heart },
+    { href: '/badges', label: 'Badge Agent', icon: Award },
     { href: '/settings', label: 'Settings', icon: Settings },
 ];
 

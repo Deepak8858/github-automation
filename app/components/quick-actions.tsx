@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { GitPullRequest, Bug, ScanSearch, Plus, Sparkles, Code2, GitCommit, Zap } from "lucide-react";
+import { GitPullRequest, Bug, ScanSearch, Plus, Sparkles, Code2, GitCommit, Zap, Award } from "lucide-react";
 
 export default function QuickActions() {
     const actions = [
@@ -58,6 +58,14 @@ export default function QuickActions() {
             color: "from-warning/20 to-transparent",
             borderColor: "border-warning/30",
             href: "/repositories",
+        },
+        {
+            title: "Badge Agent",
+            description: "Discover your GitHub achievements and let AI help you earn more.",
+            icon: <Award className="w-6 h-6" style={{ color: '#FFD700' }} />,
+            color: "from-yellow-500/20 to-transparent",
+            borderColor: "border-yellow-500/30",
+            href: "/badges",
         },
     ];
 
