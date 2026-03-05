@@ -47,7 +47,7 @@ export default function AutoAgentPage() {
     useEffect(() => {
         setMounted(true);
         const fetchSettingsAndRepos = async () => {
-            const savedSettings = localStorage.getItem('gitagent_settings');
+            const savedSettings = localStorage.getItem('gh-agent-settings');
             let currentSettings = settings;
             if (savedSettings) {
                 try {

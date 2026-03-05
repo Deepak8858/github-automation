@@ -56,7 +56,7 @@ export default function BadgesPage() {
 
     useEffect(() => {
         setMounted(true);
-        const savedSettings = localStorage.getItem('gitagent_settings');
+        const savedSettings = localStorage.getItem('gh-agent-settings');
         if (savedSettings) {
             try { setSettings(JSON.parse(savedSettings)); } catch { /* ignore */ }
         }
